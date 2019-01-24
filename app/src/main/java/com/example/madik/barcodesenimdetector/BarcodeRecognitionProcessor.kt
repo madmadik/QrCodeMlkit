@@ -1,15 +1,17 @@
 package com.example.madik.barcodesenimdetector
 
+import android.content.res.Resources
 import android.util.Log
 import com.google.android.gms.tasks.Task
 import com.google.firebase.ml.common.FirebaseMLException
 import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
-import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata
 import java.io.IOException
-import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
+import android.graphics.Bitmap
+import android.view.Display
+
 
 class BarcodeRecognitionProcessor {
     private val TAG = "BarcodeRecProc"
@@ -17,7 +19,6 @@ class BarcodeRecognitionProcessor {
     private var detector = FirebaseVision.getInstance().visionBarcodeDetector
 
     private val shouldThrottle = AtomicBoolean(false)
-
 
     fun stop() {
         try {
@@ -29,27 +30,30 @@ class BarcodeRecognitionProcessor {
 
 
     @Throws(FirebaseMLException::class)
-    fun process(data: ByteBuffer, frameMetadata: FrameMetadata, graphicOverlay: GraphicOverlay) {
+    fun process(data: Bitmap, frameMetadata: FrameMetadata, graphicOverlay: GraphicOverlay) {
 
         if (shouldThrottle.get()) {
             return
         }
-        val metadata = FirebaseVisionImageMetadata.Builder()
-            .setFormat(FirebaseVisionImageMetadata.IMAGE_FORMAT_NV21)
-            .setWidth(frameMetadata.width)
-            .setHeight(frameMetadata.height)
-            .setRotation(frameMetadata.rotation)
-            .build()
 
-        detectInVisionImage(FirebaseVisionImage.fromByteBuffer(data, metadata), frameMetadata, graphicOverlay)
+        val croppedBitmap = Bitmap.createBitmap(
+            data,
+            frameMetadata.width / 5,
+            frameMetadata.height / 5,
+            (frameMetadata.width / 1.5).toInt(),
+            (frameMetadata.height / 1.5).toInt()
+        )
+
+        val image = FirebaseVisionImage.fromBitmap(croppedBitmap)
+        detectInVisionImage(image, frameMetadata, graphicOverlay)
     }
 
-    protected fun detectInImage(image: FirebaseVisionImage): Task<MutableList<FirebaseVisionBarcode>>? {
+    private fun detectInImage(image: FirebaseVisionImage): Task<MutableList<FirebaseVisionBarcode>>? {
         return detector.detectInImage(image)
     }
 
 
-    protected fun onSuccess(
+    private fun onSuccess(
         results: MutableList<FirebaseVisionBarcode>,
         frameMetadata: FrameMetadata,
         graphicOverlay: GraphicOverlay
@@ -64,7 +68,7 @@ class BarcodeRecognitionProcessor {
         }
     }
 
-    protected fun onFailure(e: Exception) {
+    private fun onFailure(e: Exception) {
         Log.w(TAG, "Text detection failed.$e")
     }
 
@@ -73,7 +77,6 @@ class BarcodeRecognitionProcessor {
         metadata: FrameMetadata,
         graphicOverlay: GraphicOverlay
     ) {
-
         detectInImage(image)?.addOnSuccessListener { results ->
             shouldThrottle.set(false)
             this@BarcodeRecognitionProcessor.onSuccess(results, metadata, graphicOverlay)
@@ -84,5 +87,4 @@ class BarcodeRecognitionProcessor {
 
         shouldThrottle.set(true)
     }
-
 }

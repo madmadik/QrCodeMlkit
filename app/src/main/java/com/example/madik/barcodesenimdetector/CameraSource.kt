@@ -8,6 +8,9 @@ import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
 import android.hardware.Camera
 import android.hardware.Camera.*
+import android.os.Build
+import android.renderscript.*
+import android.support.annotation.RequiresApi
 import android.support.annotation.RequiresPermission
 import android.util.Log
 import android.view.Surface
@@ -16,6 +19,13 @@ import android.view.WindowManager
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.*
+import android.graphics.Bitmap
+import android.R.attr.data
+import android.renderscript.Allocation
+import android.support.v4.view.ViewCompat.setX
+import android.support.v4.view.ViewCompat.setY
+import android.renderscript.Element.U8
+
 
 class CameraSource {
 
@@ -41,9 +51,9 @@ class CameraSource {
      */
     private val ASPECT_RATIO_TOLERANCE = 0.01f
 
-    protected var activity: Activity
+    private var activity: Activity
 
-    public var camera: Camera? = null
+    var camera: Camera? = null
 
     private var facing = CAMERA_FACING_BACK
 
@@ -99,16 +109,22 @@ class CameraSource {
      */
     private val bytesToByteBuffer = IdentityHashMap<ByteArray, ByteBuffer>()
 
+    private var rs: RenderScript
+    private var yuvToRgbIntrinsic: ScriptIntrinsicYuvToRGB
+    private var yuvType: Type.Builder? = null
+    private var rgbaType: Type.Builder? = null
+    private var inner: Allocation? = null
+    private var outer: Allocation? = null
+
+    @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     constructor(activity: Activity, overlay: GraphicOverlay) {
         this.activity = activity
         graphicOverlay = overlay
         graphicOverlay.clear()
         processingRunnable = FrameProcessingRunnable()
+        rs = RenderScript.create(activity.applicationContext)
+        yuvToRgbIntrinsic = ScriptIntrinsicYuvToRGB.create(rs, Element.U8_4(rs))
     }
-
-    // ==============================================================================================
-    // Public
-    // ==============================================================================================
 
     /** Stops the camera and releases the resources of the camera and underlying detector.  */
     fun release() {
@@ -377,12 +393,10 @@ class CameraSource {
         pictureSize: Camera.Size?,
         camera: Camera
     ) {
-        private val preview: Size
+        private val preview: Size = camera.Size(previewSize.width, previewSize.height)
         private var picture: Size? = null
 
         init {
-
-            preview = camera.Size(previewSize.width, previewSize.height)
             if (pictureSize != null) {
                 picture = camera.Size(pictureSize.width, pictureSize.height)
             }
@@ -646,8 +660,6 @@ class CameraSource {
                 synchronized(lock) {
                     while (active && pendingFrameData == null) {
                         try {
-                            // Wait for the next frame to be received from the camera, since we
-                            // don't have it yet.
                             lock.wait()
                         } catch (e: InterruptedException) {
                             Log.d(TAG, "Frame processing loop terminated.", e)
@@ -657,29 +669,38 @@ class CameraSource {
                     }
 
                     if (!active) {
-                        // Exit the loop once this camera source is stopped or released.  We check
-                        // this here, immediately after the wait() above, to handle the case where
-                        // setActive(false) had been called, triggering the termination of this
-                        // loop.
                         return
                     }
 
-                    // Hold onto the frame data locally, so that we can use this for detection
-                    // below.  We need to clear pendingFrameData to ensure that this buffer isn't
-                    // recycled back to the camera before we are done using that data.
                     data = this.pendingFrameData!!
                     pendingFrameData = null
                 }
 
-                // The code below needs to run outside of synchronization, because this will allow
-                // the camera to add pending frame(s) while we are running detection on the current
-                // frame.
 
                 try {
                     synchronized(processorLock) {
                         Log.d(TAG, "Process an image")
+
+                        if (yuvType == null) {
+                            yuvType = Type.Builder(rs, Element.U8(rs)).setX(data.array().size)
+                            inner = Allocation.createTyped(rs, yuvType!!.create(), Allocation.USAGE_SCRIPT)
+
+                            rgbaType = Type.Builder(rs, Element.RGBA_8888(rs)).setX(previewSize!!.width)
+                                .setY(previewSize!!.height)
+                            outer = Allocation.createTyped(rs, rgbaType!!.create(), Allocation.USAGE_SCRIPT)
+                        }
+
+                        inner?.copyFrom(data.array())
+
+                        yuvToRgbIntrinsic.setInput(inner)
+                        yuvToRgbIntrinsic.forEach(outer)
+
+                        val bitmap =
+                            Bitmap.createBitmap(previewSize!!.width, previewSize!!.height, Bitmap.Config.ARGB_8888)
+                        outer?.copyTo(bitmap)
+
                         frameProcessor!!.process(
-                            data,
+                            bitmap,
                             FrameMetadata.Builder()
                                 .setWidth(previewSize!!.width)
                                 .setHeight(previewSize!!.height)
@@ -692,7 +713,7 @@ class CameraSource {
                 } catch (t: Throwable) {
                     Log.e(TAG, "Exception thrown from receiver.", t)
                 } finally {
-                    camera!!.addCallbackBuffer(data?.array())
+                    camera!!.addCallbackBuffer(data.array())
                 }
             }
         }
