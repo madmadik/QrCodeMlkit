@@ -36,7 +36,7 @@ class CameraSource {
         val CAMERA_FACING_FRONT = CameraInfo.CAMERA_FACING_FRONT
     }
 
-    private val TAG = "MIDemoApp:CameraSource"
+    private val TAG = "CameraSource"
 
     /**
      * The dummy surface texture must be assigned a chosen name. Since we never use an OpenGL context,
@@ -65,24 +65,14 @@ class CameraSource {
 
     private var previewSize: Size? = null
 
-    // These values may be requested by the caller.  Due to hardware limitations, we may need to
-    // select close, but not exactly the same values for these.
     private val requestedFps = 20.0f
     private val requestedPreviewWidth = 1280
     private val requestedPreviewHeight = 960
     private val requestedAutoFocus = true
 
-    // These instances need to be held onto to avoid GC of their underlying resources.  Even though
-    // these aren't used outside of the method that creates them, they still must have hard
-    // references maintained to them.
     private var dummySurfaceTexture: SurfaceTexture? = null
     private var graphicOverlay: GraphicOverlay
 
-    // True if a SurfaceTexture is being used for the preview, false if a SurfaceHolder is being
-    // used for the preview.  We want to be compatible back to Gingerbread, but SurfaceTexture
-    // wasn't introduced until Honeycomb.  Since the interface cannot use a SurfaceTexture, if the
-    // developer wants to display a preview we must use a SurfaceHolder.  If the developer doesn't
-    // want to display a preview we use a SurfaceTexture if we are running at least Honeycomb.
     private var usingSurfaceTexture: Boolean = false
 
     /**
@@ -236,7 +226,6 @@ class CameraSource {
             camera = null
         }
 
-        // Release the reference to any image buffers, since these will no longer be in use.
         bytesToByteBuffer.clear()
     }
 
@@ -310,17 +299,6 @@ class CameraSource {
 
         camera.parameters = parameters
 
-        // Four frame buffers are needed for working with the camera:
-        //
-        //   one for the frame that is currently being executed upon in doing detection
-        //   one for the next pending frame to process immediately upon completing detection
-        //   two for the frames that the camera uses to populate future preview images
-        //
-        // Through trial and error it appears that two free buffers, in addition to the two buffers
-        // used in this code, are needed for the camera to work properly.  Perhaps the camera has
-        // one thread for acquiring images, and another thread for calling into user code.  If only
-        // three buffers are used, then the camera will spew thousands of warning messages when
-        // detection takes a non-trivial amount of time.
         camera.setPreviewCallbackWithBuffer(CameraPreviewCallback())
         camera.addCallbackBuffer(createPreviewBuffer(previewSize!!))
         camera.addCallbackBuffer(createPreviewBuffer(previewSize!!))
@@ -364,10 +342,6 @@ class CameraSource {
     private fun selectSizePair(camera: Camera, desiredWidth: Int, desiredHeight: Int): SizePair? {
         val validPreviewSizes = generateValidPreviewSizeList(camera)
 
-        // The method for selecting the best size is to minimize the sum of the differences between
-        // the desired values and the actual values for width and height.  This is certainly not the
-        // only way to select the best size, but it provides a decent tradeoff between using the
-        // closest aspect ratio vs. using the closest pixel area.
         var selectedPair: SizePair? = null
         var minDiff = Integer.MAX_VALUE
         for (sizePair in validPreviewSizes) {
@@ -441,9 +415,6 @@ class CameraSource {
             }
         }
 
-        // If there are no picture sizes with the same aspect ratio as any preview sizes, allow all
-        // of the preview sizes and hope that the camera can handle it.  Probably unlikely, but we
-        // still account for it.
         if (validPreviewSizes.size == 0) {
             Log.w(TAG, "No preview sizes have a corresponding same-aspect-ratio picture size")
             for (previewSize in supportedPreviewSizes) {
@@ -464,15 +435,8 @@ class CameraSource {
      */
     @SuppressLint("InlinedApi")
     private fun selectPreviewFpsRange(camera: Camera, desiredPreviewFps: Float): IntArray? {
-        // The camera API uses integers scaled by a factor of 1000 instead of floating-point frame
-        // rates.
         val desiredPreviewFpsScaled = (desiredPreviewFps * 1000.0f).toInt()
 
-        // The method for selecting the best range is to minimize the sum of the differences between
-        // the desired value and the upper and lower bounds of the range.  This may select a range
-        // that the desired value is outside of, but this is often preferred.  For example, if the
-        // desired frame rate is 29.97, the range (30, 30) is probably more desirable than the
-        // range (15, 30).
         var selectedFpsRange: IntArray? = null
         var minDiff = Integer.MAX_VALUE
         val previewFpsRangeList = camera.parameters.supportedPreviewFpsRange
@@ -520,7 +484,6 @@ class CameraSource {
             displayAngle = angle
         }
 
-        // This corresponds to the rotation constants.
         this.rotation = angle / 90
 
         camera.setDisplayOrientation(displayAngle)
@@ -539,13 +502,9 @@ class CameraSource {
         val sizeInBits = previewSize.height * previewSize.width * bitsPerPixel
         val bufferSize = Math.ceil(sizeInBits / 8.0).toInt() + 1
 
-        // Creating the byte array this way and wrapping it, as opposed to using .allocate(),
-        // should guarantee that there will be an array to work with.
         val byteArray = ByteArray(bufferSize)
         val buffer = ByteBuffer.wrap(byteArray)
         if (!buffer.hasArray() || buffer.array() != byteArray) {
-            // I don't think that this will ever happen.  But if it does, then we wouldn't be
-            // passing the preview content to the underlying detector later.
             throw IllegalStateException("Failed to create valid buffer for camera source.")
         }
 
@@ -553,9 +512,6 @@ class CameraSource {
         return byteArray
     }
 
-    // ==============================================================================================
-    // Frame processing
-    // ==============================================================================================
 
     /** Called when the camera has a new preview frame.  */
     private inner class CameraPreviewCallback : Camera.PreviewCallback {
@@ -587,11 +543,9 @@ class CameraSource {
      */
     private inner class FrameProcessingRunnable internal constructor() : Runnable {
 
-        // This lock guards all of the member variables below.
         private val lock = Object()
         private var active = true
 
-        // These pending variables hold the state associated with the new frame awaiting processing.
         private var pendingFrameData: ByteBuffer? = null
 
         /**
@@ -675,7 +629,6 @@ class CameraSource {
                     data = this.pendingFrameData!!
                     pendingFrameData = null
                 }
-
 
                 try {
                     synchronized(processorLock) {

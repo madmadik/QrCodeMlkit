@@ -46,18 +46,11 @@ class BarcodeGraphic : GraphicOverlay.Graphic {
         return mBarcode
     }
 
-    /**
-     * Updates the barcode instance from the detection of the most recent frame.  Invalidates the
-     * relevant portions of the overlay to trigger a redraw.
-     */
     fun updateItem(barcode: FirebaseVisionBarcode) {
         mBarcode = barcode
         postInvalidate()
     }
 
-    /**
-     * Draws the barcode annotations for position, size, and raw value on the supplied canvas.
-     */
     override fun draw(canvas: Canvas) {
         val barcode = mBarcode ?: return
 

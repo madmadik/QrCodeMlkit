@@ -1,6 +1,5 @@
 package com.example.madik.barcodesenimdetector
 
-import android.content.res.Resources
 import android.util.Log
 import com.google.android.gms.tasks.Task
 import com.google.firebase.ml.common.FirebaseMLException
@@ -10,7 +9,6 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 import android.graphics.Bitmap
-import android.view.Display
 
 
 class BarcodeRecognitionProcessor {
@@ -69,7 +67,7 @@ class BarcodeRecognitionProcessor {
     }
 
     private fun onFailure(e: Exception) {
-        Log.w(TAG, "Text detection failed.$e")
+        Log.w(TAG, "Barcode detection failed.$e")
     }
 
     private fun detectInVisionImage(

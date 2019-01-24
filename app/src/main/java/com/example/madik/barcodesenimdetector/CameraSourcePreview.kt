@@ -11,7 +11,7 @@ import android.view.ViewGroup
 import java.io.IOException
 
 class CameraSourcePreview : ViewGroup {
-    private val TAG = "MIDemoApp:Preview"
+    private val TAG = "SourcePreview"
 
     private var contexts: Context
     private var surfaceView: SurfaceView
