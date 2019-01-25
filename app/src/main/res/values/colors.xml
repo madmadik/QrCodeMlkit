@@ -4,4 +4,8 @@
     <color name="colorPrimaryDark">#00574B</color>
     <color name="colorAccent">#D81B60</color>
     <color name="qr_code_reader_square">#FFFFFFFF</color>
+    <color name="transparentOverlayWhite">#e6ffffff</color>
+    <color name="transparentOverlayWhiteLight">#85ffffff</color>
+    <color name="transparent">#00000000</color>
+    <color name="white">#ffffff</color>
 </resources>

@@ -356,6 +356,18 @@ class CameraSource {
         return selectedPair
     }
 
+    fun setFlashOn() {
+        val cameraParams = camera?.parameters
+        cameraParams?.flashMode = Camera.Parameters.FLASH_MODE_TORCH
+        camera?.parameters = cameraParams
+    }
+
+    fun setFlashOff() {
+        val cameraParams = camera?.parameters
+        cameraParams?.flashMode = Camera.Parameters.FLASH_MODE_OFF
+        camera?.parameters = cameraParams
+    }
+
     /**
      * Stores a preview size and a corresponding same-aspect-ratio picture size. To avoid distorted
      * preview images on some devices, the picture size must be set to a size that is the same aspect
