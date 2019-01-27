@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">BarcodeSenimDetector</string>
-    <string name="qr_code_advice">НАВЕДИТЕ НА QR КОД ДЛЯ СКАНИРОВАНИЯ</string>
+    <string name="help_qr_scan">Наведите на QR-код для \nсканирования</string>
 </resources>

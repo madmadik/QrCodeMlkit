@@ -1,19 +1,26 @@
 package com.example.madik.barcodesenimdetector
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Path
+import android.graphics.*
+import android.support.v4.graphics.ColorUtils
 import android.util.DisplayMetrics
 import android.view.View
 
 class ViewFinderView : View {
+    private val gradientPaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var paintBorder: Paint
     private var paintMask: Paint
-    private var paintText: Paint
     private var displayMetrics: DisplayMetrics
     private lateinit var path: Path
+    private val laserColor: Int = ColorUtils.setAlphaComponent(resources.getColor(R.color.colorAccent), 200)
+    private var laserAnimator: LaserAnimator? = null
+    private var isLaserAnimationEnabled = true
+
+    private var laserPosition: Int = 0
+    private var laserHeight: Int = 0
+    private var laserDirection = 1
+
+    var borderRect: Rect = Rect()
 
     var viewFinderWidth: Float = 0f
     var transparent = transparency
@@ -21,6 +28,7 @@ class ViewFinderView : View {
     var top: Float = 0f
     var right: Float = 0f
     var bottom: Float = 0f
+    private var isSetup = false
 
     constructor(context: Context, displayMetrics: DisplayMetrics, viewFinderWidthFraction: Float) : super(context) {
         this.displayMetrics = displayMetrics
@@ -38,11 +46,6 @@ class ViewFinderView : View {
         paintMask = Paint(Paint.ANTI_ALIAS_FLAG)
         paintMask.style = Paint.Style.FILL
         paintMask.alpha = transparent
-
-        paintText = Paint(Paint.ANTI_ALIAS_FLAG)
-        paintText.color = Color.WHITE
-        paintText.style = Paint.Style.FILL
-        paintText.textSize = 32f
     }
 
     private fun initBorder() {
@@ -72,10 +75,45 @@ class ViewFinderView : View {
             displayMetrics.widthPixels.toFloat(),
             displayMetrics.heightPixels.toFloat(), paintMask
         )
-
-        //draw text above ROI
-        canvas.drawText(resources.getString(R.string.qr_code_advice), left, top - 55, paintText)
     }
+
+    private fun initAnimator() {
+        val framingRect = borderRect
+        laserAnimator = TwoWayLaserAnimator(framingRect)
+
+        laserAnimator!!.addUpdateListener { animator ->
+            laserPosition = animator.position
+            laserHeight = animator.height
+            laserDirection = animator.direction
+
+            invalidate(borderRect)
+        }
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        laserAnimator?.start()
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+
+        laserAnimator?.stop()
+
+        laserPosition = 0
+        laserHeight = 0
+        laserDirection = 1
+        isSetup = false
+    }
+
+    fun pauseAnimation() {
+        isLaserAnimationEnabled = false
+    }
+
+    fun resumeAnimation() {
+        isLaserAnimationEnabled = true
+    }
+
 }
 
 private const val transparency = 95

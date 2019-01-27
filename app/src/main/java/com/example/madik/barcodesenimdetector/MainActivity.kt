@@ -9,14 +9,19 @@ import android.graphics.Rect
 import android.os.Build
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.support.annotation.AttrRes
 import android.support.annotation.RequiresApi
 import android.support.design.widget.CoordinatorLayout
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v4.graphics.drawable.DrawableCompat.setTint
+import android.support.v7.view.ContextThemeWrapper
 import android.support.v7.widget.AppCompatImageButton
+import android.support.v7.widget.AppCompatTextView
 import android.util.DisplayMetrics
+import android.util.TypedValue
 import android.view.Gravity
+import android.view.View
 import android.widget.FrameLayout
 import java.io.IOException
 
@@ -26,10 +31,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var preview: CameraSourcePreview
     private lateinit var graphicOverlay: GraphicOverlay
     private lateinit var flashButton: AppCompatImageButton
+    private lateinit var instructionTextView: AppCompatTextView
+    private lateinit var closeButton: AppCompatImageButton
+
     private lateinit var coordinatorLayout: CoordinatorLayout
+    private lateinit var viewFinderView: ViewFinderView
 
     private var flashEnabled: Boolean = false
     private val viewFinderWidthFraction = VIEW_FINDER_WIDTH_FRACTION
+
+    var onCloseButtonClickListener: OnCloseButtonClickListener? = null
 
     @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,6 +67,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
         flashButton = AppCompatImageButton(this)
+        instructionTextView = AppCompatTextView(this)
+        closeButton = AppCompatImageButton(ContextThemeWrapper(this, R.style.LightRipple))
         preview = findViewById(R.id.camera_source_preview)
         coordinatorLayout = findViewById(R.id.coordinator_layout)
 
@@ -63,6 +76,41 @@ class MainActivity : AppCompatActivity() {
 
         createCameraSource()
         startCameraSource()
+
+        viewFinderView = ViewFinderView(this, displayMetrics, viewFinderWidthFraction)
+        this.coordinatorLayout.addView(viewFinderView)
+
+        this.coordinatorLayout.addView(
+
+            closeButton.apply {
+                setImageResource(R.drawable.ic_cross)
+                setColorFilter(R.color.white)
+                isClickable = true
+                isFocusable = true
+                setOnClickListener { onCloseButtonClickListener?.onCloseButtonClicked() }
+                setBackgroundResource(context.attrResource(R.attr.selectableItemBackgroundBorderless))
+            }, CoordinatorLayout.LayoutParams(dpToPxF(48).toInt(), dpToPxF(48).toInt()).apply {
+                topMargin = dpToPxF(40).toInt()
+                rightMargin = dpToPxF(20).toInt()
+                gravity = Gravity.TOP or Gravity.RIGHT
+            })
+
+
+
+        this.coordinatorLayout.addView(
+            instructionTextView.apply {
+                text = resources.getText(R.string.help_qr_scan)
+                gravity = Gravity.CENTER_HORIZONTAL
+                setTextColor(resources.getColor(R.color.textColorLight))
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
+                isAllCaps = true
+            },
+            CoordinatorLayout.LayoutParams(
+                CoordinatorLayout.LayoutParams.WRAP_CONTENT,
+                CoordinatorLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = Gravity.CENTER
+            })
 
         this.coordinatorLayout.addView(
             flashButton.apply {
@@ -76,21 +124,36 @@ class MainActivity : AppCompatActivity() {
             }
         )
 
-        val viewFinderView = ViewFinderView(this, displayMetrics, viewFinderWidthFraction)
-        viewFinderView.bottom
-        flashButton.y = viewFinderView.bottom + dpToPxF(20)
-        this.coordinatorLayout.addView(viewFinderView)
+        positionFlashButton(viewFinderView)
+        positionInstructionText(viewFinderView)
+    }
+
+    private fun positionFlashButton(viewFinderView: ViewFinderView) {
+        val margin = dpToPxF(20)
+        flashButton.y = viewFinderView.bottom + margin
+    }
+
+    private fun positionInstructionText(viewFinderView: ViewFinderView) {
+        val maxWidth = displayMetrics.widthPixels - dpToPxF(16) * 2
+        val widthMeasureSpec = View.MeasureSpec.makeMeasureSpec(maxWidth.toInt(), View.MeasureSpec.AT_MOST)
+        val heightMeasureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        instructionTextView.measure(widthMeasureSpec, heightMeasureSpec)
+        val height = instructionTextView.measuredHeight
+
+        val margin = dpToPxF(50)
+        instructionTextView.y = viewFinderView.top - viewFinderView.viewFinderWidth - margin - height
     }
 
     public override fun onResume() {
         super.onResume()
         startCameraSource()
+        viewFinderView.resumeAnimation()
     }
-
 
     override fun onPause() {
         super.onPause()
         preview.stop()
+        viewFinderView.pauseAnimation()
     }
 
     public override fun onDestroy() {
@@ -132,6 +195,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    interface OnCloseButtonClickListener {
+        fun onCloseButtonClicked()
+    }
+
     private fun Context.dpToPxF(dp: Int): Float =
         (dp * (resources.displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT))
 
@@ -141,8 +208,13 @@ class MainActivity : AppCompatActivity() {
             val displayParams = windowManager.defaultDisplay.getMetrics(metrics)
             return metrics
         }
-}
 
+    fun Context.attrResource(@AttrRes attrRes: Int): Int {
+        val outValue = TypedValue()
+        theme.resolveAttribute(attrRes, outValue, true)
+        return outValue.resourceId
+    }
+}
 
 private const val ICON_FLASH_ON = R.drawable.ic_flash_on
 private const val ICON_FLASH_OFF = R.drawable.ic_flash_off
