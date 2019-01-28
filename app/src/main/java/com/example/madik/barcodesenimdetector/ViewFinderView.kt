@@ -7,7 +7,6 @@ import android.util.DisplayMetrics
 import android.view.View
 
 class ViewFinderView : View {
-    private val gradientPaint: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var paintBorder: Paint
     private var paintMask: Paint
     private var displayMetrics: DisplayMetrics
@@ -57,6 +56,7 @@ class ViewFinderView : View {
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        //draw ROI
         canvas.drawRect(left, top, right, bottom, paintBorder)
 
         //draw borders around ROI with semi-transparent

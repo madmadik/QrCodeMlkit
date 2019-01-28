@@ -42,7 +42,6 @@ class MainActivity : AppCompatActivity() {
 
     var onCloseButtonClickListener: OnCloseButtonClickListener? = null
 
-    @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -161,7 +160,6 @@ class MainActivity : AppCompatActivity() {
         cameraSource?.release()
     }
 
-    @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     private fun createCameraSource() {
         cameraSource = CameraSource(this, graphicOverlay)
         cameraSource?.setFacing(CameraSource.CAMERA_FACING_BACK)

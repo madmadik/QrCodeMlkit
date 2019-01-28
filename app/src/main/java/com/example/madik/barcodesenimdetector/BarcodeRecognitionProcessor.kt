@@ -10,7 +10,6 @@ import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 import android.graphics.Bitmap
 
-
 class BarcodeRecognitionProcessor {
     private val TAG = "BarcodeRecProc"
 
@@ -59,10 +58,10 @@ class BarcodeRecognitionProcessor {
 
         graphicOverlay.clear()
 
-        for (barcode in results) {
-            val barcodeGraphic = BarcodeGraphic(graphicOverlay, barcode)
+        if (!results.isEmpty()) {
+            val barcodeGraphic = BarcodeGraphic(graphicOverlay, results[0])
             graphicOverlay.add(barcodeGraphic)
-            Log.i(TAG, barcode.rawValue.toString())
+            Log.i(TAG, results[0].rawValue.toString())
         }
     }
 

@@ -106,7 +106,8 @@ class CameraSource {
     private var inner: Allocation? = null
     private var outer: Allocation? = null
 
-    @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+
+    @SuppressLint("NewApi")
     constructor(activity: Activity, overlay: GraphicOverlay) {
         this.activity = activity
         graphicOverlay = overlay
