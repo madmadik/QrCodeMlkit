@@ -3,9 +3,7 @@ package com.example.madik.barcodesenimdetector
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Rect
+import android.graphics.*
 import android.os.Build
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -14,6 +12,7 @@ import android.support.annotation.RequiresApi
 import android.support.design.widget.CoordinatorLayout
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
+import android.support.v4.graphics.ColorUtils
 import android.support.v4.graphics.drawable.DrawableCompat.setTint
 import android.support.v7.view.ContextThemeWrapper
 import android.support.v7.widget.AppCompatImageButton
@@ -33,6 +32,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var flashButton: AppCompatImageButton
     private lateinit var instructionTextView: AppCompatTextView
     private lateinit var closeButton: AppCompatImageButton
+
 
     private lateinit var coordinatorLayout: CoordinatorLayout
     private lateinit var viewFinderView: ViewFinderView
