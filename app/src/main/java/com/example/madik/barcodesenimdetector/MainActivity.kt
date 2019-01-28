@@ -80,7 +80,6 @@ class MainActivity : AppCompatActivity() {
         this.coordinatorLayout.addView(
             instructionTextView.apply {
                 text = resources.getText(R.string.help_qr_scan)
-                gravity = Gravity.CENTER_HORIZONTAL
                 setTextColor(resources.getColor(R.color.textColorLight))
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
                 isAllCaps = true
@@ -89,7 +88,7 @@ class MainActivity : AppCompatActivity() {
                 CoordinatorLayout.LayoutParams.WRAP_CONTENT,
                 CoordinatorLayout.LayoutParams.WRAP_CONTENT
             ).apply {
-                gravity = Gravity.CENTER
+                gravity = Gravity.CENTER_HORIZONTAL
             })
 
         this.coordinatorLayout.addView(
@@ -120,8 +119,8 @@ class MainActivity : AppCompatActivity() {
         instructionTextView.measure(widthMeasureSpec, heightMeasureSpec)
         val height = instructionTextView.measuredHeight
 
-        val margin = dpToPxF(50)
-        instructionTextView.y = viewFinderView.top - viewFinderView.viewFinderWidth - margin - height
+        val margin = dpToPxF(20)
+        instructionTextView.y = viewFinderView.top - margin - height
     }
 
     public override fun onResume() {
