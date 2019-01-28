@@ -99,7 +99,6 @@ class ViewFinderView : View {
 
         drawLaser(canvas)
         drawViewFinderBorder(canvas)
-
     }
 
     fun drawViewFinderBorder(canvas: Canvas) {

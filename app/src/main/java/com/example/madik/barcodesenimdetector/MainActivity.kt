@@ -46,25 +46,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.CAMERA
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
+        requestCameraPermission()
 
-            if (ActivityCompat.shouldShowRequestPermissionRationale(
-                    this,
-                    Manifest.permission.CAMERA
-                )
-            ) {
-            } else {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.CAMERA),
-                    PERMISSION_REQUEST_CODE
-                )
-            }
-        }
         flashButton = AppCompatImageButton(this)
         instructionTextView = AppCompatTextView(this)
         closeButton = AppCompatImageButton(ContextThemeWrapper(this, R.style.LightRipple))
@@ -93,8 +76,6 @@ class MainActivity : AppCompatActivity() {
                 rightMargin = dpToPxF(20).toInt()
                 gravity = Gravity.TOP or Gravity.RIGHT
             })
-
-
 
         this.coordinatorLayout.addView(
             instructionTextView.apply {
@@ -193,6 +174,29 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun requestCameraPermission() {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.CAMERA
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(
+                    this,
+                    Manifest.permission.CAMERA
+                )
+            ) {
+            } else {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.CAMERA),
+                    PERMISSION_REQUEST_CODE
+                )
+            }
+        }
+    }
+
+    //needs to implement this
     interface OnCloseButtonClickListener {
         fun onCloseButtonClicked()
     }

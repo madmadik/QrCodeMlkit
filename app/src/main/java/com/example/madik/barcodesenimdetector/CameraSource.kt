@@ -8,9 +8,7 @@ import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
 import android.hardware.Camera
 import android.hardware.Camera.*
-import android.os.Build
 import android.renderscript.*
-import android.support.annotation.RequiresApi
 import android.support.annotation.RequiresPermission
 import android.util.Log
 import android.view.Surface
@@ -20,11 +18,7 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.*
 import android.graphics.Bitmap
-import android.R.attr.data
 import android.renderscript.Allocation
-import android.support.v4.view.ViewCompat.setX
-import android.support.v4.view.ViewCompat.setY
-import android.renderscript.Element.U8
 
 
 class CameraSource {
