@@ -35,10 +35,10 @@ class BarcodeRecognitionProcessor {
 
         val croppedBitmap = Bitmap.createBitmap(
             data,
-            frameMetadata.width / 5,
-            frameMetadata.height / 5,
-            (frameMetadata.width / 1.5).toInt(),
-            (frameMetadata.height / 1.5).toInt()
+            ((data.width - data.width * viewFinderWidth) / 2).toInt(),
+            ((data.height - data.width * viewFinderWidth) / 2).toInt(),
+            (data.width * viewFinderWidth).toInt(),
+            (data.width * viewFinderWidth).toInt()
         )
 
         val image = FirebaseVisionImage.fromBitmap(croppedBitmap)
@@ -85,3 +85,5 @@ class BarcodeRecognitionProcessor {
         shouldThrottle.set(true)
     }
 }
+
+private const val viewFinderWidth = 0.625
